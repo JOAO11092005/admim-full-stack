@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Prova</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #9b59b6; --primary-color-rgb: 155, 89, 182;
+            --background-start: #1a1a2e; --background-end: #16213e;
+            --surface-color-rgb: 25, 25, 40; --glass-border-color: rgba(255, 255, 255, 0.1);
+            --text-color: #f0f2f5; --text-color-muted: #a4b0be; --success-color: #2ecc71;
+            --font-body: 'Poppins', sans-serif; --font-header: 'Orbitron', sans-serif;
+            --border-radius: 12px; --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .loading-screen { text-align: center; font-size: 1.5rem; color: var(--primary-color); padding-top: 5rem; }
+        .loading-screen .fa-spinner { font-size: 3em; animation: spin 1.5s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .glass-card {
+            background: rgba(var(--surface-color-rgb), 0.5); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-color); border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow); margin-bottom: 2rem; overflow: hidden;
+        }
+        .card-header { padding: 1.5rem 2rem; background: rgba(var(--surface-color-rgb), 0.6); border-bottom: 1px solid var(--glass-border-color); }
+        .card-header h1 { font-family: var(--font-header); font-size: 2rem; display: flex; align-items: center; gap: 1rem; }
+        .card-header h1 .fas { color: var(--primary-color); }
+        .card-content { padding: 2rem; }
+
+        .question-block { margin-bottom: 2.5rem; }
+        .question-block h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border-color); }
+        .question-block p { white-space: pre-wrap; margin-bottom: 1rem; }
+        .question-block .option { display: block; margin-bottom: 0.5rem; }
+        .question-block .correct-answer { color: var(--success-color); font-weight: 600; }
+        .question-block .correct-answer .fas { margin-right: 0.5rem; }
+
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.5rem;
+            background: var(--primary-color); color: #fff; text-decoration: none;
+            border-radius: 8px; font-weight: 600; transition: all 0.2s ease;
+            margin-bottom: 2rem;
+        }
+        .btn-back:hover { background: #8e44ad; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="#" id="back-button" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
+        <div id="prova-container" class="glass-card" style="display: none;">
+            <div class="card-header"><h1 id="prova-title"></h1></div>
+            <div id="prova-content" class="card-content"></div>
+        </div>
+        <div id="loading-screen" class="loading-screen">
+            <i class="fas fa-spinner"></i>
+            <p>Carregando Prova...</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA9UUXIt6psEnOluZg530YBqE35Nkzlp0Y",
+  authDomain: "finamceiro-5d9ae.firebaseapp.com",
+  databaseURL: "https://finamceiro-5d9ae-default-rtdb.firebaseio.com",
+  projectId: "finamceiro-5d9ae",
+  storageBucket: "finamceiro-5d9ae.firebasestorage.app",
+  messagingSenderId: "90531422877",
+  appId: "1:90531422877:web:0b9fee54c03ba81d68aa74"
+            };
+
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            const provaContainer = document.getElementById('prova-container');
+            const provaTitleEl = document.getElementById('prova-title');
+            const provaContentEl = document.getElementById('prova-content');
+            const loadingScreen = document.getElementById('loading-screen');
+            
+            document.getElementById('back-button').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.history.back();
+            });
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const courseId = params.get('courseId');
+                const moduleId = params.get('moduleId');
+                const provaId = params.get('provaId');
+
+                if (!courseId || !moduleId || !provaId) {
+                    throw new Error("IDs do curso, módulo ou prova não encontrados na URL.");
+                }
+
+                const provaRef = db.collection(`cursos/${courseId}/modulos/${moduleId}/prova`).doc(provaId);
+                const provaDoc = await provaRef.get();
+
+                if (!provaDoc.exists) throw new Error("Prova não encontrada.");
+
+                const provaData = provaDoc.data();
+                provaTitleEl.innerHTML = `<i class="fas fa-file-signature"></i> ${provaData.titulo}`;
+
+                const questionsSnapshot = await provaRef.collection('questions').orderBy('criadoEm').get();
+                let contentHTML = '';
+                
+                questionsSnapshot.forEach((qDoc, index) => {
+                    const q = qDoc.data();
+                    contentHTML += `<div class="question-block">
+                                      <h2>Questão ${index + 1}</h2>
+                                      <p><strong>${q.enunciado}</strong></p>`;
+                    
+                    q.options.forEach((opt, optIndex) => {
+                        const isCorrect = q.correctAnswerIndex === optIndex;
+                        const optionClass = isCorrect ? 'correct-answer' : '';
+                        const icon = isCorrect ? '<i class="fas fa-check-circle"></i>' : '';
+                        contentHTML += `<span class="option ${optionClass}">${icon} ${String.fromCharCode(65 + optIndex)}) ${opt}</span>`;
+                    });
+                    contentHTML += `</div>`;
+                });
+
+                provaContentEl.innerHTML = contentHTML;
+                loadingScreen.style.display = 'none';
+                provaContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error("Erro ao carregar prova:", error);
+                loadingScreen.innerHTML = `<p style="color: #e74c3c;">Erro: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

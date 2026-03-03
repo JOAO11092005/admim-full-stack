@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Comando Central | Dev</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+        <style>
+            :root {
+                /* Paleta Starlink Estrita */
+                --bg-pure: #000000;
+                --bg-surface: #0a0a0a;
+                --border-subtle: #333333;
+                --border-focus: #ffffff;
+                --text-main: #ffffff;
+                --text-muted: #888888;
+                --danger-color: #ff4444;
+                --success-color: #2ecc71;
+                --warning-color: #f39c12;
+                --font-body: "Inter", sans-serif;
+                --sidebar-width: 260px;
+                --border-radius: 2px; /* Cantos quase retos */
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: var(--font-body);
+                background-color: var(--bg-pure);
+                color: var(--text-main);
+                display: flex;
+                overflow: hidden;
+                height: 100vh;
+            }
+
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: var(--bg-pure);
+                border-left: 1px solid var(--border-subtle);
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--border-subtle);
+                border-radius: 0;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--text-muted);
+            }
+
+            /* Tela de Carregamento */
+            .loading-screen {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                width: 100vw;
+                font-size: 1.2em;
+                color: var(--text-main);
+                position: fixed;
+                top: 0;
+                left: 0;
+                background: var(--bg-pure);
+                z-index: 9999;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+            .loading-screen .fa-spinner {
+                font-size: 2.5em;
+                margin-bottom: 25px;
+                color: var(--text-muted);
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .admin-panel {
+                display: none;
+                width: 100%;
+                height: 100vh;
+            }
+
+            /* Sidebar Técnica */
+            .admin-sidebar {
+                width: var(--sidebar-width);
+                height: 100%;
+                background: var(--bg-surface);
+                border-right: 1px solid var(--border-subtle);
+                display: flex;
+                flex-direction: column;
+                transition: width 0.3s ease;
+            }
+            .sidebar-header {
+                padding: 2.5rem 1.5rem;
+                text-align: center;
+                border-bottom: 1px solid var(--border-subtle);
+            }
+            .sidebar-header h2 {
+                font-size: 1.5em;
+                font-weight: 700;
+                color: var(--text-main);
+                letter-spacing: 3px;
+                text-transform: uppercase;
+            }
+            .sidebar-nav {
+                flex-grow: 1;
+                padding-top: 1.5rem;
+            }
+            .sidebar-nav ul {
+                list-style: none;
+            }
+            .sidebar-nav li a {
+                display: flex;
+                align-items: center;
+                padding: 1rem 2rem;
+                color: var(--text-muted);
+                text-decoration: none;
+                font-size: 0.9em;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transition: all 0.2s ease;
+                border-left: 3px solid transparent;
+                margin: 0.2rem 0;
+                cursor: pointer;
+            }
+            .sidebar-nav li a .fas {
+                width: 25px;
+                margin-right: 15px;
+                text-align: center;
+                font-size: 1.2em;
+            }
+            .sidebar-nav li a:hover {
+                color: var(--text-main);
+                background-color: rgba(255, 255, 255, 0.02);
+            }
+            .sidebar-nav li a.active {
+                color: var(--text-main);
+                font-weight: 600;
+                border-left: 3px solid var(--text-main);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            .sidebar-footer {
+                padding: 1.5rem;
+                border-top: 1px solid var(--border-subtle);
+                text-align: center;
+            }
+
+            /* Painel Principal */
+            .main-panel {
+                width: calc(100% - var(--sidebar-width));
+                height: 100%;
+                overflow-y: auto;
+                padding: 3rem;
+                background-color: var(--bg-pure);
+            }
+            .main-panel-header {
+                margin-bottom: 3rem;
+                border-bottom: 1px solid var(--border-subtle);
+                padding-bottom: 1rem;
+            }
+            .main-panel-header h1 {
+                font-size: 2rem;
+                font-weight: 600;
+                color: var(--text-main);
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                letter-spacing: -0.5px;
+            }
+            .main-panel-header h1 .fas {
+                color: var(--text-muted);
+            }
+
+            .admin-section {
+                display: none;
+                animation: fadeIn 0.3s ease-out;
+            }
+            .admin-section.active {
+                display: block;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            /* Cards Estilo Painel de Controle */
+            .content-card {
+                background: var(--bg-surface);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--border-radius);
+                margin-bottom: 2rem;
+                overflow: hidden;
+                transition: border-color 0.3s ease;
+            }
+            .content-card:hover {
+                border-color: var(--text-muted);
+            }
+            .card-header {
+                padding: 1.5rem 2rem;
+                border-bottom: 1px solid var(--border-subtle);
+                background: var(--bg-pure);
+            }
+            .card-header h3 {
+                font-size: 1.2rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .card-header h3 .fas {
+                color: var(--text-main);
+            }
+            .card-content {
+                padding: 2.5rem 2rem;
+            }
+
+            /* Formulários Tecnológicos */
+            form label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 400;
+                font-size: 0.85em;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: var(--text-muted);
+            }
+            form input,
+            form select,
+            form textarea {
+                width: 100%;
+                padding: 1rem 1.2rem;
+                margin-bottom: 1.5rem;
+                background: var(--bg-pure);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--border-radius);
+                color: var(--text-main);
+                font-family: var(--font-body);
+                font-size: 1em;
+                transition: all 0.2s ease;
+            }
+            form input:focus,
+            form select:focus,
+            form textarea:focus {
+                outline: none;
+                border-color: var(--border-focus);
+                box-shadow: 0 0 0 1px var(--border-focus);
+            }
+            textarea {
+                min-height: 120px;
+                resize: vertical;
+            }
+
+            /* Botões de Alto Contraste */
+            .btn {
+                padding: 1rem 1.5rem;
+                border: 1px solid transparent;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                font-size: 0.9em;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.7rem;
+                transition: all 0.3s ease;
+                color: var(--text-main);
+            }
+            .btn-primary {
+                background: var(--text-main);
+                color: var(--bg-pure);
+            }
+            .btn-primary:hover:not(:disabled) {
+                background: transparent;
+                color: var(--text-main);
+                border-color: var(--text-main);
+            }
+            /* Botões de Ação Menores */
+            .btn-danger {
+                background-color: transparent;
+                border-color: var(--danger-color);
+                color: var(--danger-color);
+            }
+            .btn-danger:hover:not(:disabled) {
+                background-color: var(--danger-color);
+                color: #fff;
+            }
+            .btn-warning {
+                background-color: transparent;
+                border-color: var(--text-muted);
+                color: var(--text-main);
+            }
+            .btn-warning:hover:not(:disabled) {
+                background-color: var(--text-main);
+                color: var(--bg-pure);
+            }
+            .btn-secondary {
+                background-color: transparent;
+                border-color: var(--border-subtle);
+            }
+            .btn-secondary:hover:not(:disabled) {
+                border-color: var(--text-main);
+            }
+
+            .btn-sm {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8em;
+                border-width: 1px;
+            }
+            .btn:disabled {
+                background: #222;
+                border-color: #222;
+                color: #555;
+                cursor: not-allowed;
+            }
+
+            /* Listas Planas */
+            .item-list {
+                list-style: none;
+                margin-top: 1.5rem;
+            }
+            .item-list li {
+                background: var(--bg-pure);
+                border: 1px solid var(--border-subtle);
+                padding: 1rem 1.5rem;
+                border-radius: var(--border-radius);
+                margin-bottom: 0.8rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: all 0.2s ease;
+            }
+            .item-list li:hover {
+                border-color: var(--text-main);
+            }
+            .item-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            /* Toasts (Notificações) */
+            .toast-container {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 10000;
+            }
+            .toast {
+                background: var(--bg-pure);
+                border: 1px solid var(--border-subtle);
+                color: var(--text-main);
+                padding: 1rem 1.5rem;
+                margin-bottom: 1rem;
+                border-radius: var(--border-radius);
+                border-left: 4px solid var(--text-main);
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                font-size: 0.9em;
+                font-weight: 500;
+                animation: slideInUp 0.3s ease;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            }
+            .toast.success {
+                border-left-color: var(--success-color);
+            }
+            .toast.error {
+                border-left-color: var(--danger-color);
+            }
+            @keyframes slideInUp {
+                from {
+                    transform: translateY(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            /* Modais */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.85);
+                backdrop-filter: blur(2px);
+                z-index: 9990;
+                display: none;
+                justify-content: center;
+                align-items: center;
+            }
+            .modal-overlay.active {
+                display: flex;
+            }
+            .modal-content {
+                width: 100%;
+                max-width: 650px;
+                animation: fadeIn 0.2s ease-out;
+            }
+            .modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 1rem;
+                padding-top: 1.5rem;
+                margin-top: 1rem;
+                border-top: 1px solid var(--border-subtle);
+            }
+            /* Guia do Sistema e Player de Vídeo */
+            .system-guide {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .guide-title {
+                font-size: 1.1rem;
+                font-weight: 500;
+                color: var(--text-main);
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                border-bottom: 1px solid var(--border-subtle);
+                padding-bottom: 0.8rem;
+            }
+            .guide-text {
+                color: var(--text-muted);
+                line-height: 1.7;
+                font-size: 0.95rem;
+                font-weight: 300;
+            }
+            .guide-text strong {
+                color: var(--text-main);
+                font-weight: 500;
+            }
+            /* Container responsivo blindado para o Iframe (16:9) */
+            .video-container {
+                position: relative;
+                width: 100%;
+                padding-bottom: 56.25%; /* Proporção 16:9 exata */
+                background-color: var(--bg-pure);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--border-radius);
+                overflow: hidden;
+                margin-top: 1rem;
+            }
+            /* Efeito de carregamento técnico antes do iframe carregar */
+            .video-container::before {
+                content: 'AGUARDANDO SINAL DE VÍDEO...';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: var(--border-subtle);
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+            }
+            .video-container iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: 0;
+                z-index: 2; /* Fica acima do texto de aguardando */
+            }
+        </style>
+    </head>
+    <body>
+        <div id="loading-screen" class="loading-screen">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <p>Autenticando Módulo de Comando...</p>
+        </div>
+
+        <div id="toast-container"></div>
+
+        <div id="admin-panel" class="admin-panel">
+            <aside class="admin-sidebar">
+                <div class="sidebar-header"><h2>Dev</h2></div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a data-section="dashboard" class="active"
+                                ><i class="fas fa-server"></i> Sistema</a
+                            >
+                        </li>
+                        <li>
+                            <a data-section="courses"
+                                ><i class="fas fa-layer-group"></i> Rotas</a
+                            >
+                        </li>
+                        <li>
+                            <a data-section="modules"
+                                ><i class="fas fa-cubes"></i> Módulos</a
+                            >
+                        </li>
+                        <li>
+                            <a data-section="lessons"
+                                ><i class="fas fa-video"></i> Transmissões</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <button
+                        id="logout-button"
+                        class="btn btn-secondary"
+                        style="width: 100%"
+                    >
+                        <i class="fas fa-power-off"></i> Desconectar
+                    </button>
+                </div>
+            </aside>
+
+            <main class="main-panel">
+                <header class="main-panel-header">
+                    <h1 id="main-panel-title">
+                        <i class="fas fa-server"></i> Sistema
+                    </h1>
+                </header>
+
+                <div class="admin-page-content">
+                    <section id="section-dashboard" class="admin-section active">
+                        <div class="content-card">
+                            <div class="card-header"><h3><i class="fas fa-satellite-dish"></i> Manual de Operação do Sistema</h3></div>
+                            <div class="card-content">
+
+                                <div class="system-guide">
+                                    <h4 class="guide-title">Fluxo de Dados e Criptografia</h4>
+
+                                    <p class="guide-text">
+                                        Bem-vindo à central de comando. Este sistema opera sob uma arquitetura de rotas hierárquicas. 
+                                        Para operar a plataforma, inicie criando uma <strong>Rota (Curso)</strong>. Em seguida, acople os <strong>Módulos</strong> a ela. 
+                                        Por fim, injete as <strong>Transmissões de Vídeo</strong> dentro dos módulos.
+                                    </p>
+
+                                    <p class="guide-text">
+                                        Todas as transmissões são roteadas através do player seguro para garantir a integridade do conteúdo e evitar acessos ou downloads não autorizados. 
+                                        Assista ao relatório em vídeo abaixo para compreender a configuração completa dos parâmetros.
+                                    </p>
+
+                                    <div class="video-container">
+                                        <iframe src="https://back-end-nexora.vercel.app/embed/fe25md438d8ge9br6l17pl" allowfullscreen></iframe>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="section-courses" class="admin-section">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-plus"></i> Inicializar Nova
+                                    Rota (Curso)
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <form id="add-course-form">
+                                    <label for="course-title"
+                                        >Identificação da Rota (Título)</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="course-title"
+                                        required
+                                    />
+                                    <label for="course-type"
+                                        >Categoria (Ex: Front-End)</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="course-type"
+                                        required
+                                    />
+                                    <label for="course-image-url"
+                                        >URL da Mídia de Capa</label
+                                    >
+                                    <input
+                                        type="url"
+                                        id="course-image-url"
+                                        placeholder="https://exemplo.com/imagem.jpg"
+                                    />
+                                    <button
+                                        type="submit"
+                                        class="btn btn-primary"
+                                    >
+                                        <i class="fas fa-satellite-dish"></i>
+                                        Gravar Rota
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="section-modules" class="admin-section">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-plus"></i> Adicionar Módulo
+                                    à Rota
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <form id="add-module-form">
+                                    <label for="module-course-select"
+                                        >Vincular à Rota (Curso)</label
+                                    >
+                                    <select
+                                        id="module-course-select"
+                                        required
+                                    ></select>
+                                    <label for="module-title"
+                                        >Nomenclatura do Módulo</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="module-title"
+                                        required
+                                    />
+                                    <label for="module-image-url"
+                                        >URL da Imagem do Módulo
+                                        (Opcional)</label
+                                    >
+                                    <input
+                                        type="url"
+                                        id="module-image-url"
+                                        placeholder="https://exemplo.com/imagem.jpg"
+                                    />
+                                    <button
+                                        type="submit"
+                                        class="btn btn-primary"
+                                    >
+                                        <i class="fas fa-cube"></i> Gravar
+                                        Módulo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-database"></i> Módulos
+                                    Ativos
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <label for="view-modules-course-select"
+                                    >Filtrar por Rota:</label
+                                >
+                                <select
+                                    id="view-modules-course-select"
+                                ></select>
+                                <ul id="module-list" class="item-list"></ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="section-lessons" class="admin-section">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-plus"></i> Configurar Nova
+                                    Transmissão (Aula)
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <form id="add-lesson-form">
+                                    <label for="lesson-course-select"
+                                        >Rota Alvo</label
+                                    >
+                                    <select
+                                        id="lesson-course-select"
+                                        required
+                                    ></select>
+                                    <label for="lesson-module-select"
+                                        >Módulo Alvo</label
+                                    >
+                                    <select
+                                        id="lesson-module-select"
+                                        required
+                                    ></select>
+                                    <label for="lesson-title"
+                                        >Título da Transmissão</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="lesson-title"
+                                        required
+                                    />
+                                    <label for="lesson-iframe-url"
+                                        >URL de Incorporação (Iframe)</label
+                                    >
+                                    <input
+                                        type="url"
+                                        id="lesson-iframe-url"
+                                        placeholder="https://www.youtube.com/embed/..."
+                                        required
+                                    />
+                                    <label for="lesson-description"
+                                        >Dados Adicionais (Descrição)</label
+                                    >
+                                    <textarea
+                                        id="lesson-description"
+                                    ></textarea>
+                                    <button
+                                        type="submit"
+                                        class="btn btn-primary"
+                                    >
+                                        <i class="fas fa-upload"></i> Publicar
+                                        Transmissão
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-database"></i> Transmissões
+                                    Cadastradas
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <label for="view-lessons-course-select"
+                                    >Rota:</label
+                                >
+                                <select
+                                    id="view-lessons-course-select"
+                                ></select>
+                                <label for="view-lessons-module-select"
+                                    >Módulo:</label
+                                >
+                                <select
+                                    id="view-lessons-module-select"
+                                ></select>
+                                <ul id="lesson-list" class="item-list"></ul>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+
+        <div id="edit-module-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="content-card" style="margin-bottom: 0">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-pen"></i> Alterar Parâmetros do
+                            Módulo
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <form id="edit-module-form">
+                            <input type="hidden" id="edit-module-id" />
+                            <input type="hidden" id="edit-module-course-id" />
+                            <label for="edit-module-title"
+                                >Nova Nomenclatura</label
+                            >
+                            <input
+                                type="text"
+                                id="edit-module-title"
+                                required
+                            />
+                            <label for="edit-module-image-url"
+                                >Nova URL de Imagem</label
+                            >
+                            <input
+                                type="url"
+                                id="edit-module-image-url"
+                                placeholder="https://exemplo.com/imagem.jpg"
+                            />
+                            <div class="modal-footer">
+                                <button
+                                    type="button"
+                                    id="cancel-edit-module"
+                                    class="btn btn-secondary"
+                                >
+                                    Abortar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Atualizar Dados
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="edit-lesson-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="content-card" style="margin-bottom: 0">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-pen"></i> Alterar Parâmetros da
+                            Transmissão
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <form id="edit-lesson-form">
+                            <input type="hidden" id="edit-lesson-id" />
+                            <input type="hidden" id="edit-lesson-module-id" />
+                            <input type="hidden" id="edit-lesson-course-id" />
+                            <label for="edit-lesson-title">Novo Título</label>
+                            <input
+                                type="text"
+                                id="edit-lesson-title"
+                                required
+                            />
+                            <label for="edit-lesson-iframe-url"
+                                >Nova URL de Incorporação</label
+                            >
+                            <input
+                                type="url"
+                                id="edit-lesson-iframe-url"
+                                placeholder="https://www.youtube.com/embed/..."
+                                required
+                            />
+                            <label for="edit-lesson-description"
+                                >Nova Descrição</label
+                            >
+                            <textarea id="edit-lesson-description"></textarea>
+                            <div class="modal-footer">
+                                <button
+                                    type="button"
+                                    id="cancel-edit-lesson"
+                                    class="btn btn-secondary"
+                                >
+                                    Abortar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Atualizar Dados
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyA9UUXIt6psEnOluZg530YBqE35Nkzlp0Y",
+                    authDomain: "finamceiro-5d9ae.firebaseapp.com",
+                    databaseURL:
+                        "https://finamceiro-5d9ae-default-rtdb.firebaseio.com",
+                    projectId: "finamceiro-5d9ae",
+                    storageBucket: "finamceiro-5d9ae.appspot.com",
+                    messagingSenderId: "90531422877",
+                    appId: "1:90531422877:web:0b9fee54c03ba81d68aa74",
+                    measurementId: "G-GQYCPLJ6Q3",
+                };
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                const auth = firebase.auth();
+                const db = firebase.firestore();
+
+                const ADMIN_EMAIL = "joao@gmail.com";
+
+                const loadingScreen = document.getElementById("loading-screen");
+                const adminPanel = document.getElementById("admin-panel");
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user && user.email === ADMIN_EMAIL) {
+                        loadingScreen.style.display = "none";
+                        adminPanel.style.display = "flex";
+                        initializeAppLogic(auth, db);
+                    } else {
+                        if (user) await auth.signOut();
+                        window.location.replace("login.html");
+                    }
+                });
+            });
+
+            function initializeAppLogic(auth, db) {
+                const mainPanelTitle =
+                    document.getElementById("main-panel-title");
+                const navLinks = document.querySelectorAll(".sidebar-nav a");
+                const adminSections =
+                    document.querySelectorAll(".admin-section");
+                const toastContainer =
+                    document.getElementById("toast-container");
+
+                const courseSelects = document.querySelectorAll(
+                    "#module-course-select, #lesson-course-select, #view-modules-course-select, #view-lessons-course-select",
+                );
+
+                const addLessonModuleSelect = document.getElementById(
+                    "lesson-module-select",
+                );
+                const viewModulesCourseSelect = document.getElementById(
+                    "view-modules-course-select",
+                );
+                const moduleList = document.getElementById("module-list");
+                const editModuleModal =
+                    document.getElementById("edit-module-modal");
+                const editModuleForm =
+                    document.getElementById("edit-module-form");
+
+                const viewLessonsCourseSelect = document.getElementById(
+                    "view-lessons-course-select",
+                );
+                const viewLessonsModuleSelect = document.getElementById(
+                    "view-lessons-module-select",
+                );
+                const lessonList = document.getElementById("lesson-list");
+                const editLessonModal =
+                    document.getElementById("edit-lesson-modal");
+                const editLessonForm =
+                    document.getElementById("edit-lesson-form");
+
+                const showToast = (message, type = "info") => {
+                    const toast = document.createElement("div");
+                    toast.className = `toast ${type}`;
+                    const iconClass =
+                        type === "success"
+                            ? "fa-check-circle"
+                            : "fa-times-circle";
+                    toast.innerHTML = `<i class="fas ${iconClass}"></i> ${message}`;
+                    toastContainer.appendChild(toast);
+                    setTimeout(() => {
+                        toast.style.animation = "fadeOut 0.3s ease forwards";
+                        setTimeout(() => toast.remove(), 300);
+                    }, 4000);
+                };
+
+                const setupForm = (formId, submitLogic) => {
+                    const form = document.getElementById(formId);
+                    if (!form) return;
+                    form.addEventListener("submit", async (e) => {
+                        e.preventDefault();
+                        const submitButton = form.querySelector(
+                            'button[type="submit"]',
+                        );
+                        const originalButtonContent = submitButton.innerHTML;
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processando...`;
+                        try {
+                            await submitLogic(form);
+                            if (formId.startsWith("add-")) form.reset();
+                            showToast(
+                                "Operação realizada com sucesso!",
+                                "success",
+                            );
+                        } catch (error) {
+                            console.error(
+                                `Erro no formulário ${formId}:`,
+                                error,
+                            );
+                            showToast(
+                                error.message ||
+                                    "Falha na gravação. Verifique o console.",
+                                "error",
+                            );
+                        } finally {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = originalButtonContent;
+                        }
+                    });
+                };
+
+                navLinks.forEach((link) => {
+                    link.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const sectionName = link.dataset.section;
+                        navLinks.forEach((l) => l.classList.remove("active"));
+                        adminSections.forEach((s) =>
+                            s.classList.remove("active"),
+                        );
+                        link.classList.add("active");
+                        const targetSection = document.getElementById(
+                            `section-${sectionName}`,
+                        );
+                        if (targetSection)
+                            targetSection.classList.add("active");
+                        const linkIcon = link.querySelector(".fas").outerHTML;
+                        mainPanelTitle.innerHTML = `${linkIcon} ${link.innerText}`;
+                    });
+                });
+                document
+                    .getElementById("logout-button")
+                    .addEventListener("click", () => auth.signOut());
+
+                const loadCoursesForSelects = async () => {
+                    try {
+                        const snapshot = await db
+                            .collection("cursos")
+                            .orderBy("titulo")
+                            .get();
+                        const defaultOption =
+                            '<option value="">-- Selecione uma Rota --</option>';
+                        courseSelects.forEach((s) => {
+                            const currentValue = s.value;
+                            s.innerHTML = defaultOption;
+                            snapshot.forEach((doc) => {
+                                const option = `<option value="${doc.id}">${doc.data().titulo}</option>`;
+                                s.innerHTML += option;
+                            });
+                            s.value = currentValue;
+                        });
+                    } catch (error) {
+                        console.error("Erro ao carregar cursos:", error);
+                        showToast(
+                            "Erro ao carregar a lista de rotas.",
+                            "error",
+                        );
+                    }
+                };
+
+                const loadModulesForSelect = async (courseId, targetSelect) => {
+                    targetSelect.innerHTML =
+                        '<option value="">-- Carregando dados... --</option>';
+                    if (!courseId) {
+                        targetSelect.innerHTML =
+                            '<option value="">-- Selecione uma rota primeiro --</option>';
+                        return;
+                    }
+                    try {
+                        const snapshot = await db
+                            .collection("cursos")
+                            .doc(courseId)
+                            .collection("modulos")
+                            .orderBy("titulo")
+                            .get();
+                        let options =
+                            '<option value="">-- Selecione um módulo --</option>';
+                        if (snapshot.empty) {
+                            options =
+                                '<option value="">-- Nenhum módulo detectado --</option>';
+                        } else {
+                            snapshot.forEach((doc) => {
+                                options += `<option value="${doc.id}">${doc.data().titulo}</option>`;
+                            });
+                        }
+                        targetSelect.innerHTML = options;
+                    } catch (error) {
+                        console.error("Erro ao carregar módulos:", error);
+                        targetSelect.innerHTML =
+                            '<option value="">-- Falha de Leitura --</option>';
+                        showToast("Erro ao carregar módulos.", "error");
+                    }
+                };
+
+                setupForm("add-course-form", async (form) => {
+                    const titulo = form.querySelector("#course-title").value;
+                    if (!titulo)
+                        throw new Error(
+                            "A identificação da rota é obrigatória.",
+                        );
+                    await db.collection("cursos").add({
+                        titulo: titulo,
+                        tipo: form.querySelector("#course-type").value,
+                        imagemUrl:
+                            form.querySelector("#course-image-url").value,
+                        criadoEm:
+                            firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+                    await loadCoursesForSelects();
+                });
+
+                setupForm("add-module-form", async (form) => {
+                    const courseId = form.querySelector(
+                        "#module-course-select",
+                    ).value;
+                    const titulo = form.querySelector("#module-title").value;
+                    if (!courseId || !titulo)
+                        throw new Error(
+                            "Rota e Nomenclatura são obrigatórios.",
+                        );
+
+                    await db
+                        .collection("cursos")
+                        .doc(courseId)
+                        .collection("modulos")
+                        .add({
+                            titulo: titulo,
+                            imagemUrl:
+                                form.querySelector("#module-image-url").value,
+                            criadoEm:
+                                firebase.firestore.FieldValue.serverTimestamp(),
+                        });
+                    if (courseId === viewModulesCourseSelect.value)
+                        displayModules(courseId);
+                });
+
+                setupForm("add-lesson-form", async (form) => {
+                    const courseId = form.querySelector(
+                        "#lesson-course-select",
+                    ).value;
+                    const moduleId = form.querySelector(
+                        "#lesson-module-select",
+                    ).value;
+                    const titulo = form.querySelector("#lesson-title").value;
+                    const iframeUrl =
+                        form.querySelector("#lesson-iframe-url").value;
+                    if (!courseId || !moduleId || !titulo || !iframeUrl)
+                        throw new Error("Dados incompletos para transmissão.");
+
+                    await db
+                        .collection("cursos")
+                        .doc(courseId)
+                        .collection("modulos")
+                        .doc(moduleId)
+                        .collection("aulas")
+                        .add({
+                            titulo: titulo,
+                            iframeUrl: iframeUrl,
+                            descricao: form.querySelector("#lesson-description")
+                                .value,
+                            criadoEm:
+                                firebase.firestore.FieldValue.serverTimestamp(),
+                        });
+                    if (
+                        courseId === viewLessonsCourseSelect.value &&
+                        moduleId === viewLessonsModuleSelect.value
+                    ) {
+                        displayLessons(courseId, moduleId);
+                    }
+                });
+
+                setupForm("edit-module-form", async (form) => {
+                    const courseId = form.querySelector(
+                        "#edit-module-course-id",
+                    ).value;
+                    const moduleId =
+                        form.querySelector("#edit-module-id").value;
+                    const titulo =
+                        form.querySelector("#edit-module-title").value;
+                    if (!courseId || !moduleId || !titulo)
+                        throw new Error("Parâmetros inválidos.");
+                    await db
+                        .collection("cursos")
+                        .doc(courseId)
+                        .collection("modulos")
+                        .doc(moduleId)
+                        .update({
+                            titulo: titulo,
+                            imagemUrl: form.querySelector(
+                                "#edit-module-image-url",
+                            ).value,
+                        });
+                    editModuleModal.classList.remove("active");
+                    displayModules(courseId);
+                });
+
+                setupForm("edit-lesson-form", async (form) => {
+                    const courseId = form.querySelector(
+                        "#edit-lesson-course-id",
+                    ).value;
+                    const moduleId = form.querySelector(
+                        "#edit-lesson-module-id",
+                    ).value;
+                    const lessonId =
+                        form.querySelector("#edit-lesson-id").value;
+                    const titulo =
+                        form.querySelector("#edit-lesson-title").value;
+                    const iframeUrl = form.querySelector(
+                        "#edit-lesson-iframe-url",
+                    ).value;
+                    if (
+                        !courseId ||
+                        !moduleId ||
+                        !lessonId ||
+                        !titulo ||
+                        !iframeUrl
+                    )
+                        throw new Error("Parâmetros inválidos.");
+
+                    await db
+                        .collection("cursos")
+                        .doc(courseId)
+                        .collection("modulos")
+                        .doc(moduleId)
+                        .collection("aulas")
+                        .doc(lessonId)
+                        .update({
+                            titulo: titulo,
+                            iframeUrl: iframeUrl,
+                            descricao: form.querySelector(
+                                "#edit-lesson-description",
+                            ).value,
+                        });
+                    editLessonModal.classList.remove("active");
+                    displayLessons(courseId, moduleId);
+                });
+
+                const displayModules = async (courseId) => {
+                    moduleList.innerHTML =
+                        '<li><i class="fas fa-spinner fa-spin"></i> Lendo base de dados...</li>';
+                    if (!courseId) {
+                        moduleList.innerHTML =
+                            "<li>Aguardando seleção de rota.</li>";
+                        return;
+                    }
+                    try {
+                        const snapshot = await db
+                            .collection("cursos")
+                            .doc(courseId)
+                            .collection("modulos")
+                            .orderBy("titulo")
+                            .get();
+                        if (snapshot.empty) {
+                            moduleList.innerHTML =
+                                "<li>Nenhum dado encontrado para este bloco.</li>";
+                            return;
+                        }
+                        moduleList.innerHTML = "";
+                        snapshot.forEach((doc) => {
+                            const module = doc.data();
+                            const li = document.createElement("li");
+                            li.innerHTML = `
+                        <span>${module.titulo}</span>
+                        <div class="item-actions">
+                            <button class="btn btn-warning btn-sm btn-edit-module" data-course-id="${courseId}" data-module-id="${doc.id}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm btn-delete-module" data-course-id="${courseId}" data-module-id="${doc.id}"><i class="fas fa-trash-alt"></i></button>
+                        </div>`;
+                            moduleList.appendChild(li);
+                        });
+                    } catch (error) {
+                        console.error("Erro ao exibir módulos: ", error);
+                        showToast(
+                            "Falha de comunicação com o servidor.",
+                            "error",
+                        );
+                        moduleList.innerHTML = "<li>Erro de sistema.</li>";
+                    }
+                };
+
+                const displayLessons = async (courseId, moduleId) => {
+                    lessonList.innerHTML =
+                        '<li><i class="fas fa-spinner fa-spin"></i> Lendo base de dados...</li>';
+                    if (!courseId || !moduleId) {
+                        lessonList.innerHTML =
+                            "<li>Aguardando parâmetros de busca completos.</li>";
+                        return;
+                    }
+                    try {
+                        const snapshot = await db
+                            .collection("cursos")
+                            .doc(courseId)
+                            .collection("modulos")
+                            .doc(moduleId)
+                            .collection("aulas")
+                            .orderBy("titulo")
+                            .get();
+                        if (snapshot.empty) {
+                            lessonList.innerHTML =
+                                "<li>Nenhum dado encontrado para este bloco.</li>";
+                            return;
+                        }
+                        lessonList.innerHTML = "";
+                        snapshot.forEach((doc) => {
+                            const lesson = doc.data();
+                            const li = document.createElement("li");
+                            li.innerHTML = `
+                        <span>${lesson.titulo}</span>
+                        <div class="item-actions">
+                            <button class="btn btn-warning btn-sm btn-edit-lesson" data-course-id="${courseId}" data-module-id="${moduleId}" data-lesson-id="${doc.id}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm btn-delete-lesson" data-course-id="${courseId}" data-module-id="${moduleId}" data-lesson-id="${doc.id}"><i class="fas fa-trash-alt"></i></button>
+                        </div>`;
+                            lessonList.appendChild(li);
+                        });
+                    } catch (error) {
+                        console.error("Erro ao exibir transmissões: ", error);
+                        showToast(
+                            "Falha de comunicação com o servidor.",
+                            "error",
+                        );
+                        lessonList.innerHTML = "<li>Erro de sistema.</li>";
+                    }
+                };
+
+                document
+                    .getElementById("lesson-course-select")
+                    .addEventListener("change", (e) =>
+                        loadModulesForSelect(
+                            e.target.value,
+                            addLessonModuleSelect,
+                        ),
+                    );
+                viewModulesCourseSelect.addEventListener("change", (e) =>
+                    displayModules(e.target.value),
+                );
+                viewLessonsCourseSelect.addEventListener("change", (e) => {
+                    lessonList.innerHTML = "";
+                    loadModulesForSelect(
+                        e.target.value,
+                        viewLessonsModuleSelect,
+                    );
+                });
+                viewLessonsModuleSelect.addEventListener("change", (e) =>
+                    displayLessons(
+                        viewLessonsCourseSelect.value,
+                        e.target.value,
+                    ),
+                );
+
+                moduleList.addEventListener("click", async (e) => {
+                    const editBtn = e.target.closest(".btn-edit-module");
+                    const deleteBtn = e.target.closest(".btn-delete-module");
+
+                    if (editBtn) {
+                        const courseId = editBtn.dataset.courseId;
+                        const moduleId = editBtn.dataset.moduleId;
+                        const doc = await db
+                            .collection("cursos")
+                            .doc(courseId)
+                            .collection("modulos")
+                            .doc(moduleId)
+                            .get();
+                        if (doc.exists) {
+                            const data = doc.data();
+                            editModuleForm.querySelector(
+                                "#edit-module-id",
+                            ).value = doc.id;
+                            editModuleForm.querySelector(
+                                "#edit-module-course-id",
+                            ).value = courseId;
+                            editModuleForm.querySelector(
+                                "#edit-module-title",
+                            ).value = data.titulo;
+                            editModuleForm.querySelector(
+                                "#edit-module-image-url",
+                            ).value = data.imagemUrl || "";
+                            editModuleModal.classList.add("active");
+                        }
+                    }
+
+                    if (deleteBtn) {
+                        const courseId = deleteBtn.dataset.courseId;
+                        const moduleId = deleteBtn.dataset.moduleId;
+                        if (
+                            confirm(
+                                "Atenção: A exclusão do módulo eliminará permanentemente todas as transmissões vinculadas. Prosseguir?",
+                            )
+                        ) {
+                            try {
+                                const aulasSnapshot = await db
+                                    .collection("cursos")
+                                    .doc(courseId)
+                                    .collection("modulos")
+                                    .doc(moduleId)
+                                    .collection("aulas")
+                                    .get();
+                                const batch = db.batch();
+                                aulasSnapshot.docs.forEach((doc) =>
+                                    batch.delete(doc.ref),
+                                );
+                                await batch.commit();
+                                await db
+                                    .collection("cursos")
+                                    .doc(courseId)
+                                    .collection("modulos")
+                                    .doc(moduleId)
+                                    .delete();
+                                showToast("Registro eliminado.", "success");
+                                displayModules(courseId);
+                            } catch (error) {
+                                console.error("Erro ao excluir módulo:", error);
+                                showToast("Falha na exclusão.", "error");
+                            }
+                        }
+                    }
+                });
+
+                lessonList.addEventListener("click", async (e) => {
+                    const editBtn = e.target.closest(".btn-edit-lesson");
+                    const deleteBtn = e.target.closest(".btn-delete-lesson");
+
+                    if (editBtn) {
+                        const { courseId, moduleId, lessonId } =
+                            editBtn.dataset;
+                        const doc = await db
+                            .collection("cursos")
+                            .doc(courseId)
+                            .collection("modulos")
+                            .doc(moduleId)
+                            .collection("aulas")
+                            .doc(lessonId)
+                            .get();
+                        if (doc.exists) {
+                            const data = doc.data();
+                            editLessonForm.querySelector(
+                                "#edit-lesson-course-id",
+                            ).value = courseId;
+                            editLessonForm.querySelector(
+                                "#edit-lesson-module-id",
+                            ).value = moduleId;
+                            editLessonForm.querySelector(
+                                "#edit-lesson-id",
+                            ).value = doc.id;
+                            editLessonForm.querySelector(
+                                "#edit-lesson-title",
+                            ).value = data.titulo;
+                            editLessonForm.querySelector(
+                                "#edit-lesson-iframe-url",
+                            ).value = data.iframeUrl;
+                            editLessonForm.querySelector(
+                                "#edit-lesson-description",
+                            ).value = data.descricao || "";
+                            editLessonModal.classList.add("active");
+                        }
+                    }
+                    if (deleteBtn) {
+                        const { courseId, moduleId, lessonId } =
+                            deleteBtn.dataset;
+                        if (
+                            confirm(
+                                "Atenção: Excluir esta transmissão do banco de dados?",
+                            )
+                        ) {
+                            try {
+                                await db
+                                    .collection("cursos")
+                                    .doc(courseId)
+                                    .collection("modulos")
+                                    .doc(moduleId)
+                                    .collection("aulas")
+                                    .doc(lessonId)
+                                    .delete();
+                                showToast("Registro eliminado.", "success");
+                                displayLessons(courseId, moduleId);
+                            } catch (error) {
+                                console.error(
+                                    "Erro ao excluir transmissão:",
+                                    error,
+                                );
+                                showToast("Falha na exclusão.", "error");
+                            }
+                        }
+                    }
+                });
+
+                document
+                    .getElementById("cancel-edit-module")
+                    .addEventListener("click", () =>
+                        editModuleModal.classList.remove("active"),
+                    );
+                document
+                    .getElementById("cancel-edit-lesson")
+                    .addEventListener("click", () =>
+                        editLessonModal.classList.remove("active"),
+                    );
+
+                loadCoursesForSelects();
+            }
+        </script>
+    </body>
+</html>

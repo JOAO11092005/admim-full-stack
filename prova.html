@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de Provas - DevQuest Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700;900&display=swap');
+        :root {
+            --primary-color: #8a2be2; --primary-color-darker: #7322b3; --primary-color-rgb: 138, 43, 226;
+            --background-color: #050507; --surface-color: #121215; --sidebar-bg: #0D0D0F;
+            --text-color: #e4e6eb; --text-color-muted: #a8abb0; --border-color: #2a2b2e;
+            --danger-color: #e74c3c; --success-color: #2ecc71; --input-bg-color: #1f2023;
+            --card-shadow: 0 6px 15px rgba(0,0,0,0.5);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Roboto', sans-serif; margin: 0;
+            background-color: var(--background-color); color: var(--text-color);
+            line-height: 1.6;
+        }
+        .loading-screen {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; font-size: 1.5em; color: var(--primary-color);
+            position: fixed; top: 0; left: 0; background-color: var(--background-color); z-index: 9999;
+        }
+        .loading-screen .loader-icon { font-size: 3em; margin-bottom: 20px; animation: spin 1.5s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #main-content { display: none; padding: 30px; max-width: 900px; margin: 40px auto; }
+        
+        .form-card {
+            background-color: var(--surface-color); margin-bottom: 35px; border-radius: 10px;
+            border: 1px solid var(--border-color); box-shadow: var(--card-shadow); overflow: hidden;
+        }
+        .form-card-header {
+            background-color: rgba(var(--primary-color-rgb), 0.1); padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;
+        }
+        .form-card-header h1 { margin: 0; font-size: 1.8em; font-family: 'Orbitron', sans-serif; color: var(--primary-color); }
+        .form-card-content { padding: 30px; }
+
+        label { display: block; margin-top: 18px; margin-bottom: 8px; font-weight: 500; color: var(--text-color-muted); font-size: 0.9em; text-transform: uppercase; }
+        input[type="text"], select, textarea {
+            width: 100%; padding: 14px; margin-bottom: 12px; background-color: var(--input-bg-color);
+            border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color);
+            font-family: 'Roboto', sans-serif; font-size: 1em;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
+        }
+        textarea { min-height: 80px; resize: vertical; }
+
+        .button, button {
+            padding: 12px 22px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em;
+            font-weight: 700; transition: all 0.2s ease; font-family: 'Roboto', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.8px; margin-top: 15px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        button:disabled { cursor: not-allowed; background-color: #555; }
+        button:not(:disabled):hover { transform: translateY(-3px); }
+        .button-primary { background-color: var(--primary-color); color: white; }
+        .button-success { background-color: var(--success-color); color: white; }
+        .button-danger { background-color: var(--danger-color); color: white; }
+        
+        .question-block {
+            background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .correct-answer-group { margin-top: 15px; }
+        .correct-answer-group label { display: inline-flex; align-items: center; margin-right: 20px; cursor: pointer; }
+        .correct-answer-group input[type="radio"] { margin-right: 8px; transform: scale(1.2); }
+    </style>
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+       <i class="fas fa-shield-halved loader-icon"></i>
+       <p>Verificando Credenciais de Administrador...</p>
+    </div>
+
+    <main id="main-content">
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="fas fa-file-alt" style="font-size: 1.5em; color: var(--primary-color);"></i>
+                <h1>Criador de Provas</h1>
+            </div>
+            <div class="form-card-content">
+                <form id="prova-form">
+                    <label for="course-select">1. Selecione o Curso</label>
+                    <select id="course-select" required>
+                        <option value="">Carregando cursos...</option>
+                    </select>
+
+                    <label for="module-select">2. Selecione o Módulo</label>
+                    <select id="module-select" required disabled>
+                        <option value="">Selecione um curso primeiro</option>
+                    </select>
+                    
+                    <label for="prova-title">3. Título da Prova</label>
+                    <input type="text" id="prova-title" placeholder="Ex: Prova Final de HTML" required>
+
+                    <hr style="border-color: var(--border-color); margin: 30px 0;">
+
+                    <div id="questions-container">
+                        <!-- As questões serão adicionadas aqui por JavaScript -->
+                    </div>
+
+                    <button type="button" id="add-question-btn" class="button-primary">
+                        <i class="fas fa-plus"></i> Adicionar Questão
+                    </button>
+                    <button type="submit" class="button-success" style="margin-left: 10px;">
+                        <i class="fas fa-save"></i> Salvar Prova Completa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA9UUXIt6psEnOluZg530YBqE35Nkzlp0Y",
+                authDomain: "finamceiro-5d9ae.firebaseapp.com",
+                projectId: "finamceiro-5d9ae",
+                storageBucket: "finamceiro-5d9ae.appspot.com",
+                messagingSenderId: "90531422877",
+                appId: "1:90531422877:web:0b9fee54c03ba81d68aa74"
+            };
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const ADMIN_EMAIL = "joao@gmail.com"; 
+
+            const loadingScreen = document.getElementById('loading-screen');
+            const mainContent = document.getElementById('main-content');
+            
+            auth.onAuthStateChanged(user => {
+                if (user && user.email === ADMIN_EMAIL) {
+                    loadingScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    initializeAppLogic();
+                } else {
+                    // Idealmente, redirecionar para uma página de login de admin
+                    loadingScreen.innerHTML = '<i class="fas fa-ban"></i><p>Acesso Negado</p>';
+                }
+            });
+
+            function initializeAppLogic() {
+                const courseSelect = document.getElementById('course-select');
+                const moduleSelect = document.getElementById('module-select');
+                const questionsContainer = document.getElementById('questions-container');
+                const addQuestionBtn = document.getElementById('add-question-btn');
+                const provaForm = document.getElementById('prova-form');
+                let questionCounter = 0;
+
+                // Carregar cursos
+                async function loadCourses() {
+                    courseSelect.innerHTML = '<option value="">Carregando...</option>';
+                    try {
+                        const snapshot = await db.collection('cursos').orderBy('titulo').get();
+                        courseSelect.innerHTML = '<option value="">-- Selecione --</option>';
+                        snapshot.forEach(doc => {
+                            courseSelect.innerHTML += `<option value="${doc.id}">${doc.data().titulo}</option>`;
+                        });
+                    } catch (error) {
+                        console.error("Erro ao carregar cursos: ", error);
+                        courseSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                    }
+                }
+
+                // Carregar módulos com base no curso selecionado
+                async function loadModules(courseId) {
+                    moduleSelect.innerHTML = '<option value="">Carregando...</option>';
+                    moduleSelect.disabled = true;
+                    if (!courseId) {
+                        moduleSelect.innerHTML = '<option value="">Selecione um curso primeiro</option>';
+                        return;
+                    }
+                    try {
+                        const snapshot = await db.collection('cursos').doc(courseId).collection('modulos').orderBy('titulo').get();
+                        moduleSelect.innerHTML = '<option value="">-- Selecione --</option>';
+                        if (snapshot.empty) {
+                             moduleSelect.innerHTML = '<option value="">Nenhum módulo encontrado</option>';
+                        } else {
+                            snapshot.forEach(doc => {
+                                moduleSelect.innerHTML += `<option value="${doc.id}">${doc.data().titulo}</option>`;
+                            });
+                            moduleSelect.disabled = false;
+                        }
+                    } catch (error) {
+                         console.error("Erro ao carregar módulos: ", error);
+                         moduleSelect.innerHTML = '<option value="">Erro ao carregar módulos</option>';
+                    }
+                }
+                
+                function createQuestionBlock() {
+                    questionCounter++;
+                    const blockId = `question-${questionCounter}`;
+                    const block = document.createElement('div');
+                    block.className = 'question-block';
+                    block.id = blockId;
+                    
+                    block.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4>Questão ${questionCounter}</h4>
+                            ${questionCounter > 1 ? `<button type="button" class="button-danger" data-remove="${blockId}" style="margin-top:0; padding: 5px 10px;">&times;</button>` : ''}
+                        </div>
+                        <label for="${blockId}-text">Texto da Pergunta</label>
+                        <textarea id="${blockId}-text" required></textarea>
+                        
+                        <div class="options-grid">
+                            <div>
+                                <label for="${blockId}-opt-0">Opção A</label>
+                                <input type="text" id="${blockId}-opt-0" required>
+                            </div>
+                            <div>
+                                <label for="${blockId}-opt-1">Opção B</label>
+                                <input type="text" id="${blockId}-opt-1" required>
+                            </div>
+                             <div>
+                                <label for="${blockId}-opt-2">Opção C</label>
+                                <input type="text" id="${blockId}-opt-2" required>
+                            </div>
+                             <div>
+                                <label for="${blockId}-opt-3">Opção D</label>
+                                <input type="text" id="${blockId}-opt-3" required>
+                            </div>
+                        </div>
+                        
+                        <div class="correct-answer-group">
+                            <strong>Resposta Correta:</strong>
+                            <label><input type="radio" name="${blockId}-correct" value="0" checked> A</label>
+                            <label><input type="radio" name="${blockId}-correct" value="1"> B</label>
+                            <label><input type="radio" name="${blockId}-correct" value="2"> C</label>
+                            <label><input type="radio" name="${blockId}-correct" value="3"> D</label>
+                        </div>
+                    `;
+                    questionsContainer.appendChild(block);
+
+                    block.querySelector(`[data-remove="${blockId}"]`)?.addEventListener('click', function() {
+                        document.getElementById(this.dataset.remove).remove();
+                    });
+                }
+
+                async function handleFormSubmit(e) {
+                    e.preventDefault();
+                    const submitButton = e.target.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+                    const courseId = courseSelect.value;
+                    const moduleId = moduleSelect.value;
+                    const provaTitle = document.getElementById('prova-title').value;
+                    
+                    const questionsData = [];
+                    const questionBlocks = questionsContainer.querySelectorAll('.question-block');
+                    
+                    for (const block of questionBlocks) {
+                        const text = block.querySelector('textarea').value;
+                        const options = [
+                            block.querySelector(`#${block.id}-opt-0`).value,
+                            block.querySelector(`#${block.id}-opt-1`).value,
+                            block.querySelector(`#${block.id}-opt-2`).value,
+                            block.querySelector(`#${block.id}-opt-3`).value,
+                        ];
+                        const correctAnswerIndex = parseInt(block.querySelector(`input[name="${block.id}-correct"]:checked`).value, 10);
+                        
+                        if(!text || options.some(opt => !opt)) {
+                            alert('Por favor, preencha todos os campos de todas as questões.');
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = '<i class="fas fa-save"></i> Salvar Prova Completa';
+                            return;
+                        }
+                        questionsData.push({ text, options, correctAnswerIndex });
+                    }
+                    
+                    try {
+                        // 1. Cria o documento da prova
+                        const provaCollectionRef = db.collection('cursos').doc(courseId).collection('modulos').doc(moduleId).collection('prova');
+                        const provaDocRef = await provaCollectionRef.add({
+                            titulo: provaTitle,
+                            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // 2. Cria cada questão como um documento na subcoleção 'questions'
+                        const questionsCollectionRef = provaDocRef.collection('questions');
+                        for(const question of questionsData) {
+                             await questionsCollectionRef.add({
+                                ...question,
+                                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+
+                        alert('Prova e questões salvas com sucesso!');
+                        provaForm.reset();
+                        questionsContainer.innerHTML = '';
+                        questionCounter = 0;
+                        createQuestionBlock(); // Adiciona o primeiro bloco de volta
+                        moduleSelect.innerHTML = '<option value="">Selecione um curso primeiro</option>';
+                        moduleSelect.disabled = true;
+
+                    } catch (error) {
+                        console.error("Erro ao salvar prova: ", error);
+                        alert("Falha ao salvar a prova. Verifique o console para mais detalhes.");
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-save"></i> Salvar Prova Completa';
+                    }
+                }
+
+                // Event Listeners
+                courseSelect.addEventListener('change', () => loadModules(courseSelect.value));
+                addQuestionBtn.addEventListener('click', createQuestionBlock);
+                provaForm.addEventListener('submit', handleFormSubmit);
+
+                // Inicialização
+                loadCourses();
+                createQuestionBlock(); // Começa com um bloco de questão
+            }
+        });
+    </script>
+</body>
+</html>

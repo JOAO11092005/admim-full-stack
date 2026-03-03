@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevStream - Plataforma de Cursos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        /* Reset e Variáveis de Cor (Tema Starlink) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --bg-pure: #000000;
+            --bg-surface: #0a0a0a;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border-subtle: #333333;
+            --border-hover: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-pure);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Hero Section com fundo espacial profundo */
+        .hero-section {
+            position: relative;
+            background: radial-gradient(circle at 50% 0%, #111111 0%, #000000 70%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Estrelas lentas e minimalistas */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent url('data:image/svg+xml;utf8,<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="1" fill="white" opacity="0.6"/><circle cx="250" cy="100" r="0.8" fill="white" opacity="0.3"/><circle cx="150" cy="300" r="1.5" fill="white" opacity="0.5"/><circle cx="350" cy="200" r="0.5" fill="white" opacity="0.2"/></svg>') repeat;
+            z-index: 1;
+            animation: drift 100s linear infinite;
+        }
+
+        @keyframes drift {
+            from { background-position: 0 0; }
+            to { background-position: -1000px 1000px; }
+        }
+
+        /* Cabeçalho superior */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 5%;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Logo técnica e espaçada */
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 4px; /* Espaçamento largo de letras */
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        /* Botão de login no cabeçalho - Estilo "Ghost" */
+        .login-btn-header {
+            background-color: transparent;
+            color: var(--text-main);
+            padding: 10px 24px;
+            text-decoration: none;
+            border: 1px solid var(--text-main);
+            border-radius: 2px; /* Cantos quase retos */
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn-header:hover {
+            background-color: var(--text-main);
+            color: var(--bg-pure);
+        }
+
+        /* Área central de conteúdo */
+        .hero-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            font-weight: 600;
+            max-width: 900px;
+            margin-bottom: 24px;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            font-weight: 300;
+            max-width: 700px;
+            margin-bottom: 50px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Botão principal de ação */
+        .cta-btn {
+            background-color: var(--text-main);
+            color: var(--bg-pure);
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            border-radius: 2px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .cta-btn:hover {
+            background-color: transparent;
+            color: var(--text-main);
+        }
+
+        .cta-btn i {
+            margin-left: 12px;
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .cta-btn:hover i {
+            transform: translateX(5px);
+        }
+
+        /* SEÇÃO: Explicação do Sistema */
+        .features-section {
+            padding: 100px 5%;
+            background-color: var(--bg-pure);
+        }
+
+        .features-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 80px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-main);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Cards em estilo painel de controle */
+        .feature-card {
+            background-color: var(--bg-pure);
+            padding: 40px 30px;
+            border-radius: 2px;
+            text-align: left;
+            border: 1px solid var(--border-subtle);
+            transition: border-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Detalhe visual de alta tecnologia (linha superior) */
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background-color: var(--text-muted);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-5px);
+        }
+
+        .feature-card:hover::before {
+            width: 100%;
+            background-color: var(--text-main);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--text-main);
+            margin-bottom: 25px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        /* Footer minimalista */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--bg-pure);
+            color: var(--border-subtle);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .hero-content h1 { font-size: 2.5rem; }
+            .hero-content p { font-size: 1rem; }
+            .cta-btn { font-size: 0.9rem; padding: 15px 30px; }
+            .logo { font-size: 1.2rem; }
+            .features-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero-section">
+        <div class="stars"></div>
+
+        <header class="header">
+            <div class="logo">Dev</div>
+            <a href="login.html" class="login-btn-header">Acesso Restrito</a>
+        </header>
+
+        <main class="hero-content">
+            <h1>Arquitetura de Ensino Avançada.</h1>
+            <p>Plataforma de alta performance para gestão de cursos em tecnologia. Controle total de acesso, métricas em tempo real e entrega de conteúdo sem latência.</p>
+            
+            <button id="btn-comecar" class="cta-btn">
+                Iniciar Sessão <i class="fas fa-arrow-right"></i>
+            </button>
+        </main>
+    </div>
+
+    <section class="features-section">
+        <h2 class="features-title">Especificações do Sistema</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-network-wired feature-icon"></i>
+                <h3>Rotas de Aprendizado</h3>
+                <p>Estruture módulos hierárquicos. Estabeleça dependências estritas entre aulas, garantindo que o conhecimento base seja adquirido antes do avanço.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fas fa-radar" class="feature-icon" style="font-size: 2rem; color: #fff; margin-bottom: 25px;"></i>
+                <h3>Telemetria de Alunos</h3>
+                <p>Monitoramento contínuo. Obtenha dados precisos sobre retenção de vídeo, progresso por módulo e frequência de acessos de cada usuário credenciado.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fas fa-lock feature-icon"></i>
+                <h3>Criptografia e Acesso</h3>
+                <p>Autenticação blindada com Firebase. O conteúdo é entregue exclusivamente para sessões ativas, bloqueando tentativas de extração de mídia.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fas fa-file-signature feature-icon"></i>
+                <h3>Emissão Analítica</h3>
+                <p>Geração automatizada de certificados digitais assim que os parâmetros de conclusão de 100% da grade curricular forem atingidos pelo sistema.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 DevStream Systems. Operação Nominal.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnComecar = document.getElementById('btn-comecar');
+
+            // Redirecionamento rigoroso para o portal de login
+            btnComecar.addEventListener('click', () => {
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
+</body>
+</html>

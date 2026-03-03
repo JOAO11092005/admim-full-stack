@@ -1,0 +1,17 @@
+O modo que você está se referindo é conhecido como **"múltipla escolha"** (ou *multiple choice*, em inglês). Cada questão apresenta várias alternativas — geralmente identificadas por letras (A, B, C, D) — e o aluno deve escolher **apenas uma resposta correta**.
+
+Esse formato é comum em:
+
+* **Provas objetivas**
+* **Simulados**
+* **Quizzes interativos**
+* **Avaliações de plataformas de ensino online**
+
+Se você estiver montando uma prova com esse estilo, pode chamá-la de:
+
+✅ **Prova objetiva de múltipla escolha**
+ou
+✅ **Avaliação em formato de múltipla escolha**
+
+Se quiser, posso também te mostrar como formatar isso num Google Forms ou outro sistema.
+Marque a Resposta Correta: Para que o sistema saiba qual é a alternativa certa, basta colocar um asterisco (*) no início da opção correta. Exemplo: *C) Para interagir com o sistema por meio de comandos de texto

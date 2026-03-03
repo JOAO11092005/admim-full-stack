@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin</title>
+    <style>
+        /* Estilos básicos e variáveis do tema escuro (semelhantes ao admin.html) */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap');
+
+        :root {
+            --primary-color: #8a2be2; /* blueviolet */
+            --primary-color-darker: #7322b3;
+            --background-color: #0d0d0d; /* Quase preto */
+            --surface-color: #1a1a1a; /* Para cards e seções */
+            --text-color: #e0e0e0;
+            --text-color-muted: #a0a0a0;
+            --danger-color: #ff4d4d;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-container {
+            background-color: var(--surface-color);
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        /* NOVO: Estilo para ocultar o container por padrão */
+        .hidden {
+            display: none;
+        }
+
+        .login-container h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-color-muted);
+            font-size: 0.9em;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            background-color: #252525; 
+            border: 1px solid #383838;
+            border-radius: 5px;
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.95em;
+            box-sizing: border-box;
+        }
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background-color: var(--primary-color);
+            color: white;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: var(--primary-color-darker);
+            box-shadow: 0 2px 8px rgba(138, 43, 226, 0.4);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #error-message {
+            color: var(--danger-color);
+            margin-top: 15px;
+            font-size: 0.9em;
+            min-height: 1.2em; /* Para evitar que o layout pule */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-container" class="login-container hidden">
+        <h1>Login Administrador</h1>
+        <form id="login-form">
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div>
+                <label for="password">Senha:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+        <p id="error-message"></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <script>
+        // NOVO: Defina seu código secreto. Use algo longo e aleatório.
+        const CODIGO_DE_ACESSO = "SEU_CODIGO_SECRETO_AQUI"; 
+
+        const loginContainer = document.getElementById('login-container');
+
+        // NOVO: Função para obter parâmetros da URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // NOVO: Verificação de segurança inicial
+        const accessKey = getQueryParam('access_key');
+        if (accessKey !== CODIGO_DE_ACESSO) {
+            document.body.innerHTML = '<h1>Acesso não autorizado.</h1>';
+            // Impede a execução do resto do script
+        } else {
+            loginContainer.classList.remove('hidden');
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyA9UUXIt6psEnOluZg530YBqE35Nkzlp0Y",
+  authDomain: "finamceiro-5d9ae.firebaseapp.com",
+  databaseURL: "https://finamceiro-5d9ae-default-rtdb.firebaseio.com",
+  projectId: "finamceiro-5d9ae",
+  storageBucket: "finamceiro-5d9ae.firebasestorage.app",
+  messagingSenderId: "90531422877",
+  appId: "1:90531422877:web:0b9fee54c03ba81d68aa74"
+            };
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            const auth = firebase.auth();
+
+            const loginForm = document.getElementById('login-form');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const errorMessageElement = document.getElementById('error-message');
+
+            loginForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                errorMessageElement.textContent = ''; 
+                const email = emailInput.value;
+                const password = passwordInput.value;
+
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        console.log("Login bem-sucedido:", userCredential.user);
+                        // ALTERADO: Redirecionar para a página de administração com a chave de acesso
+                        window.location.href = `admin.html?access_key=${CODIGO_DE_ACESSO}`; 
+                    })
+                    .catch((error) => {
+                        console.error("Erro no login:", error);
+                        let friendlyMessage = "Erro ao tentar fazer login. Verifique suas credenciais.";
+                        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                            friendlyMessage = "Email ou senha inválidos.";
+                        } else if (error.code === 'auth/invalid-email') {
+                            friendlyMessage = "O formato do email é inválido.";
+                        }
+                        errorMessageElement.textContent = friendlyMessage;
+                    });
+            });
+            
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    console.log("Usuário já logado, redirecionando para admin.html com a chave");
+                    // ALTERADO: Redireciona para admin.html com a chave
+                    window.location.replace(`admin.html?access_key=${CODIGO_DE_ACESSO}`);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
